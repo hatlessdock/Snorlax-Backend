@@ -59,3 +59,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# --- Postman (instalado por error en el proyecto) ---
+.postman/
+postman/
+
+# --- Docs temporales de integración (solo locales) ---
+docs/INTEGRACION_FRONT_BACK.md
+docs/actualizar_imagenes_imgbb.sql
