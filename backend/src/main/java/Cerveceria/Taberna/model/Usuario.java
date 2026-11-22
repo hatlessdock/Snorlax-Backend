@@ -1,6 +1,13 @@
 package Cerveceria.Taberna.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
@@ -31,6 +38,8 @@ public class Usuario {
     @Column(nullable = false, unique = true)
     private String email;
 
+    // Si serializamos el usuario, entonces nunca mandamos el password:
+    // por eso @JsonIgnore, para que el front jamás reciba el hash.
     @NotBlank(message = "La contraseña es obligatoria")
     @JsonIgnore
     @Column(nullable = false)

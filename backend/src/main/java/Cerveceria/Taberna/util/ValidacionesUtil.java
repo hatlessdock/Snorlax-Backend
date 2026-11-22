@@ -34,12 +34,16 @@ public class ValidacionesUtil {
             throw new IllegalArgumentException("La fecha de nacimiento es obligatoria");
         }
 
+        // Usamos Period (no solo restar años) para respetar día y mes:
+        // si todavía no cumplió este año, la edad no cuenta completo.
         LocalDate hoy = LocalDate.now();
         int edad = Period.between(fechaNacimiento, hoy).getYears();
 
+        // Si es menor de 18, entonces no puede registrarse (venta +18).
         if (edad < 18) {
             throw new IllegalArgumentException("Debes ser mayor de 18 años para registrarte");
         }
+        // Si pasa de 120, entonces la fecha es inválida (probablemente un typo).
         if (edad > 120) {
             throw new IllegalArgumentException("La edad no puede ser mayor a 120 años");
         }

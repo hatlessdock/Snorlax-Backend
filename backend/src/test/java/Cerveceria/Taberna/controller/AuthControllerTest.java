@@ -1,10 +1,9 @@
 package Cerveceria.Taberna.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.LocalDate;
 
@@ -40,7 +39,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Si tienes un endpoint /api/auth/logout, podrías llamarlo aquí
+        // Si tenemos un endpoint /api/auth/logout, podrías llamarlo aquí
         // en caso de que algún test deje la sesión estática activa.
     }
 
@@ -52,18 +51,18 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setFechaNacimiento("2000-01-01");
 
-        when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(null);
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+        Mockito.when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(null);
+        Mockito.when(usuarioRepository.save(ArgumentMatchers.any(Usuario.class))).thenAnswer(invocation -> {
             Usuario u = invocation.getArgument(0);
             u.setId(1L);
             return u;
         });
 
-        mockMvc.perform(post("/api/auth/registro")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/registro")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.ok").value(true));
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.ok").value(true));
     }
 
     @Test
@@ -77,12 +76,12 @@ class AuthControllerTest {
         Usuario existente = new Usuario();
         existente.setId(1L);
         existente.setEmail("juan@email.com");
-        when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(existente);
+        Mockito.when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(existente);
 
-        mockMvc.perform(post("/api/auth/registro")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/registro")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
@@ -93,12 +92,12 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setFechaNacimiento("2020-01-01"); // 6 años aprox
 
-        when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(null);
+        Mockito.when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(null);
 
-        mockMvc.perform(post("/api/auth/registro")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/registro")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
@@ -114,17 +113,17 @@ class AuthControllerTest {
         usuario.setRol("cliente");
         usuario.setFechaNacimiento(LocalDate.of(2000, 1, 1));
 
-        when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(usuario);
+        Mockito.when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(usuario);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("juan@email.com");
         loginRequest.setPassword(passwordPlano);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").exists());
     }
 
     @Test
@@ -136,29 +135,29 @@ class AuthControllerTest {
         usuario.setEmail("juan@email.com");
         usuario.setPassword(passwordHasheada);
 
-        when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(usuario);
+        Mockito.when(usuarioRepository.findByEmail("juan@email.com")).thenReturn(usuario);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("juan@email.com");
         loginRequest.setPassword("passwordIncorrecto");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
 
     @Test
     void loginConEmailNoRegistradoDebeRetornar401() throws Exception {
-        when(usuarioRepository.findByEmail("noexiste@email.com")).thenReturn(null);
+        Mockito.when(usuarioRepository.findByEmail("noexiste@email.com")).thenReturn(null);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("noexiste@email.com");
         loginRequest.setPassword("cualquiercosa");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
 }

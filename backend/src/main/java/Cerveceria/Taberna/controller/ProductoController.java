@@ -11,7 +11,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
@@ -34,6 +45,9 @@ public class ProductoController {
     public CollectionModel<EntityModel<Producto>> listarProductos(
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) String nombre) {
+        // Si el front manda una categoría, entonces filtramos por ella;
+        // si manda un nombre, buscamos ignorando mayúsculas;
+        // si no manda nada, entonces devolvemos todo el inventario.
         List<Producto> productos;
         if (categoria != null && !categoria.isEmpty()) {
             productos = productoRepository.findByCategoria(categoria);
@@ -107,6 +121,8 @@ public class ProductoController {
                 .body(Map.of("error", "Datos inválidos", "campos", errores));
     }
 
+    // Envolvemos cada producto en EntityModel y le agregamos sus links HATEOAS:
+    // "self" para el detalle y "productos" para volver al listado.
     private EntityModel<Producto> toModel(Producto producto) {
         EntityModel<Producto> model = EntityModel.of(producto);
         model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProductoController.class).obtenerProducto(producto.getId())).withSelfRel());

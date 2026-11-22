@@ -9,7 +9,16 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -63,6 +72,8 @@ public class OrdenController {
         Integer total = Integer.valueOf(datos.get("total").toString());
         String estado = (String) datos.getOrDefault("estado", "pendiente");
 
+        // Si el usuario de la orden no existe, entonces no guardamos nada:
+        // devolvemos 404 para que el checkout no cree una orden huérfana.
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(usuarioId);
         if (usuarioOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario " + usuarioId + " no existe");

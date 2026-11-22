@@ -13,7 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import java.time.LocalDate;
@@ -29,7 +35,10 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // Sesiñn en memoria simple (para desarrollo)
+    // Si tenemos una sesión en memoria mientras dure la instancia,
+    // entonces guardamos acá el correo del usuario que hizo login.
+    // Es temporal: cuando el front pide /es-admin volvemos a buscar al usuario
+    // en la BD para leer su rol de verdad.
     private static String sesionEmail = null;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -39,22 +48,29 @@ public class AuthController {
         String email = credenciales.getEmail().trim().toLowerCase();
         String password = credenciales.getPassword();
 
+        // Si el correo no tiene formato válido, entonces ni buscamos en la BD:
+        // devolvemos 400 directo para que el front muestre el error en el formulario.
         if (!ValidacionesUtil.esEmailValido(email)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "El formato del email es invñlido"));
+                    .body(Map.of("error", "El formato del email es inválido"));
         }
 
+        // Si no encontramos el correo, entonces mandamos 401 "credenciales inválidas"
+        // (no decimos que el usuario no existe, por seguridad).
         Usuario usuario = usuarioRepository.findByEmail(email);
         if (usuario == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Credenciales invñlidas"));
+                    .body(Map.of("error", "Credenciales inválidas"));
         }
 
+        // Si la contraseña que viene no coincide con el hash guardado,
+        // entonces tampoco dejamos entrar: usamos BCrypt.matches, nunca texto plano.
         if (!passwordEncoder.matches(password, usuario.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Credenciales invñlidas"));
+                    .body(Map.of("error", "Credenciales inválidas"));
         }
 
+        // Si pasamos las dos validaciones, entonces marcamos la sesión con este correo.
         sesionEmail = email;
 
         Map<String, Object> respuesta = new HashMap<>();
@@ -75,26 +91,41 @@ public class AuthController {
         String password = datos.getPassword();
         String fechaNacimientoStr = datos.getFechaNacimiento();
 
+        // Si el email no es válido, entonces ni seguimos con el registro.
         if (!ValidacionesUtil.esEmailValido(email)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "El formato del email es invñlido"));
+                    .body(Map.of("error", "El formato del email es inválido"));
         }
 
+        // Si el correo ya está en la BD, entonces no creamos otro usuario:
+        // el email es único y se lo avisamos al front con un 400.
         if (usuarioRepository.findByEmail(email) != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "El email ya estñ registrado"));
+                    .body(Map.of("error", "El email ya está registrado"));
         }
 
+        // Si la fecha viene en otro formato, entonces no la podemos parsear:
+        // le pedimos YYYY-MM-DD para que el front sepa cómo enviarla.
         LocalDate fechaNacimiento;
         try {
             fechaNacimiento = LocalDate.parse(fechaNacimientoStr);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Formato de fecha invñlido. Use YYYY-MM-DD"));
+                    .body(Map.of("error", "Formato de fecha inválido. Use YYYY-MM-DD"));
         }
 
-        ValidacionesUtil.validarEdad(fechaNacimiento);
+        // Si la edad no está entre 18 y 120, entonces validarEdad lanza:
+        // la capturamos y le mandamos el mensaje al front con un 400.
+        try {
+            ValidacionesUtil.validarEdad(fechaNacimiento);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
 
+        // Si llegamos hasta acá, entonces armamos el usuario:
+        // guardamos la contraseña hasheada con BCrypt y el rol siempre "cliente"
+        // (los admin los creamos directo en Neon, no por este endpoint).
         Usuario nuevo = new Usuario();
         nuevo.setNombre(nombre);
         nuevo.setEmail(email);
@@ -154,12 +185,15 @@ public class AuthController {
                     .body(Map.of("esAdmin", false));
         }
 
+        // Si hay sesión, entonces comparamos el rol del usuario:
+        // con esto el front decide si muestra o no el botón de Administración.
         boolean esAdmin = "admin".equals(usuario.getRol());
         return ResponseEntity.ok(Map.of("esAdmin", esAdmin));
     }
 
     /**
-     * Manejador de errores de validaciñn @Valid
+     * Si @Valid encuentra campos malos, entonces armamos un mapa
+     * campo -> mensaje para que el front sepa exactamente qué corregir.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> manejarErroresValidacion(MethodArgumentNotValidException ex) {

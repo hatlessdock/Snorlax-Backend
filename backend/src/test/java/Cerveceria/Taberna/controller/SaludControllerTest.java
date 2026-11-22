@@ -1,9 +1,7 @@
 package Cerveceria.Taberna.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +17,9 @@ class SaludControllerTest {
 
     @Test
     void healthDebeRetornarEstadoOk() throws Exception {
-        mockMvc.perform(get("/api/health"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.valueOf("application/hal+json")))
-                .andExpect(jsonPath("$.estado").value("ok"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/health"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.valueOf("application/hal+json")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.estado").value("ok"));
     }
 }

@@ -7,7 +7,11 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,6 +64,8 @@ public class BlogController {
         return toModel(blog);
     }
 
+    // Cada artículo viaja con sus links HATEOAS:
+    // "self" para el detalle y "blog" para volver al listado completo.
     private EntityModel<Blog> toModel(Blog blog) {
         EntityModel<Blog> model = EntityModel.of(blog);
         model.add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(BlogController.class).obtenerBlog(blog.getId())).withSelfRel());

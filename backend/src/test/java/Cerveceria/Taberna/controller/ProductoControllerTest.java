@@ -1,13 +1,9 @@
 package Cerveceria.Taberna.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,12 +57,12 @@ class ProductoControllerTest {
         p2.setDescuento(15);
 
         List<Producto> productos = Arrays.asList(p1, p2);
-        when(productoRepository.findAll()).thenReturn(productos);
+        Mockito.when(productoRepository.findAll()).thenReturn(productos);
 
-        mockMvc.perform(get("/api/productos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombre").value("Pika"))
-                .andExpect(jsonPath("$[1].nombre").value("Bulba"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/productos"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.productoList[0].nombre").value("Pika"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.productoList[1].nombre").value("Bulba"));
     }
 
     @Test
@@ -81,12 +77,12 @@ class ProductoControllerTest {
         producto.setCategoria("Cervezas");
         producto.setDescuento(0);
 
-        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        Mockito.when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
 
-        mockMvc.perform(get("/api/productos/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nombre").value("Pika"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/productos/1"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.nombre").value("Pika"));
     }
 
     @Test
@@ -104,13 +100,13 @@ class ProductoControllerTest {
         productoGuardado.setCategoria("Cervezas");
         productoGuardado.setDescuento(0);
 
-        when(productoRepository.save(any(Producto.class))).thenReturn(productoGuardado);
+        Mockito.when(productoRepository.save(ArgumentMatchers.any(Producto.class))).thenReturn(productoGuardado);
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/productos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nombre").value("Nuevo Producto"));
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.nombre").value("Nuevo Producto"));
     }
 
     @Test
@@ -120,26 +116,26 @@ class ProductoControllerTest {
         request.setPrecio(-100);
         request.setCategoria("Cervezas");
 
-        mockMvc.perform(post("/api/productos")
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/productos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
     void eliminarProductoDebeRetornar204() throws Exception {
-        when(productoRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(productoRepository).deleteById(1L);
+        Mockito.when(productoRepository.existsById(1L)).thenReturn(true);
+        Mockito.doNothing().when(productoRepository).deleteById(1L);
 
-        mockMvc.perform(delete("/api/productos/1"))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/productos/1"))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 
     @Test
     void eliminarProductoInexistenteDebeRetornar404() throws Exception {
-        when(productoRepository.existsById(999L)).thenReturn(false);
+        Mockito.when(productoRepository.existsById(999L)).thenReturn(false);
 
-        mockMvc.perform(delete("/api/productos/999"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/productos/999"))
+                .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
 }
