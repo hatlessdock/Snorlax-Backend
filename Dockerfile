@@ -27,3 +27,7 @@ EXPOSE 8080
 
 # Comando de arranque
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Evitar reinicios por falta de RAM
+ENV JAVA_TOOL_OPTIONS="-Xmx256m -Xms128m"
+ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -122,7 +122,7 @@ export function Checkout() {
     );
   }
 
-  const enviar = async (evento) => {
+  const enviar = (evento) => {
     evento.preventDefault();
     const nuevosErrores = {};
 
@@ -175,15 +175,15 @@ export function Checkout() {
 
     localStorage.setItem(CLAVE_RESUMEN, JSON.stringify(resumen));
 
-    try {
+    if (sesion?.id) {
       const datosOrden = {
-        usuarioId: sesion?.id ?? null,
+        usuarioId: sesion.id,
         total: total,
         estado: resumen.estado,
       };
-      await OrdenService.crearOrden(datosOrden);
-    } catch (error) {
-      console.log('Error al registrar orden:', error);
+      OrdenService.crearOrden(datosOrden).catch((error) => {
+        console.log('Error al registrar orden:', error);
+      });
     }
 
     if (rechazarPago) {
